@@ -38,3 +38,22 @@ class CustomUserViewSet(UserViewSet):
             context={'request': request}
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(
+        detail=True,
+        methods=['POST', 'DELETE'],
+        permission_classes=[AllowAny]
+    )
+    def subscribe(self, request, **kwargs):
+        """Подписываем/отписываем пользователя."""
+        user = request.user
+        author_id = self.kwargs.get('id')
+        author = get_object_or_404(User, id=author_id)
+        if request.method == 'POST':
+            serializer = FollowSerializer(author,
+                                          context={'request': request})
+            Follow.objects.create(subscriber=user, author=author)
+            return Response(serializer.data,
+                            status=status.HTTP_201_CREATED)
+        get_object_or_404(Follow, subscriber=user, author=author).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
