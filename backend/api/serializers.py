@@ -1,6 +1,7 @@
-from users.models import User, Follow
 from rest_framework import serializers
 
+from users.models import User, Follow
+from recipes.models import Tag
 
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор пользователей."""
@@ -54,3 +55,20 @@ class FollowSerializer(UserSerializer):
     def get_recipes_count(self, obj):
         """Получаем количество рецептов."""
         return False
+
+
+class TagSerializer(serializers.ModelSerializer):
+    """Теги."""
+    class Meta:
+        model = Tag
+        fields = (
+            'id',
+            'name',
+            'color',
+            'slug'
+        )
+
+
+class IngredientSerializer(serializers.ModelSerializer):
+    """Ингредиенты."""
+    pass
