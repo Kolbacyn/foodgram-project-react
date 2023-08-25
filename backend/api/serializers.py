@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
 from users.models import User, Follow
-from recipes.models import Tag
+from recipes.models import Tag, Ingredient
+
 
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор пользователей."""
@@ -58,7 +59,7 @@ class FollowSerializer(UserSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
-    """Теги."""
+    """Сериализатор тегов."""
     class Meta:
         model = Tag
         fields = (
@@ -70,5 +71,11 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class IngredientSerializer(serializers.ModelSerializer):
-    """Ингредиенты."""
-    pass
+    """Сериализатор ингредиентов."""
+    class Meta:
+        model = Ingredient
+        fields = (
+            'id',
+            'name',
+            'measurement_unit',
+        )
