@@ -2,8 +2,9 @@ from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from recipes.models import Tag, Ingredient
-from api.serializers import (TagSerializer, IngredientSerializer, )
+from recipes.models import Tag, Ingredient, Recipe
+from api.serializers import (TagSerializer, IngredientSerializer,
+                             RecipeSerializer)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -38,3 +39,10 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
             author=self.request.user.is_superuser,
             ingredient=ingredient
         )
+
+
+class RecipeViewSet(viewsets.ModelViewSet):
+    """Рецепты."""
+    queryset = Recipe.objects.all()
+    serializer_class = RecipeSerializer
+    permission_classes = (IsAuthenticated,)

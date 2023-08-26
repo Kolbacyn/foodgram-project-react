@@ -1,4 +1,7 @@
 from django.db import models
+from django.core import validators
+
+from users.models import User
 
 
 class Tag(models.Model):
@@ -48,3 +51,45 @@ class Ingredient(models.Model):
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
         ordering = ('name',)
+
+
+class Recipe(models.Model):
+    """Модель рецепта."""
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Автор рецепта',
+        null=False,
+        blank=False,
+        default=None
+    )
+    tags = models.ManyToManyField(
+        Tag,
+        verbose_name='Теги к рецепту',
+    )
+    ingredients = models.ManyToManyField(
+        Ingredient,
+        verbose_name='необходимые ингредиенты',
+    )
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Название рецепта',
+    )
+    text = models.TextField(
+        verbose_name='Описание рецепта',
+    )
+    image = models.ImageField(
+        null=True,
+        default=None,
+        verbose_name='Картинка',
+    )
+    cooking_time = models.PositiveSmallIntegerField(
+        verbose_name='Время приготовления',
+        default=0,
+        validators=(
+            validators.MinValueValidator(
+                0,
+                message='Минимальное время приготовления = 0'
+            ),
+        ),
+    )

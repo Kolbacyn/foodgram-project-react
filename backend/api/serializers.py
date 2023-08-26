@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from users.models import User, Follow
-from recipes.models import Tag, Ingredient
+from recipes.models import Tag, Ingredient, Recipe
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -79,3 +79,33 @@ class IngredientSerializer(serializers.ModelSerializer):
             'name',
             'measurement_unit',
         )
+
+
+class RecipeSerializer(serializers.ModelSerializer):
+    """Сериализатор рецептов."""
+    is_favorited = serializers.SerializerMethodField(read_only=True)
+    is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
+    tags = TagSerializer(many=True)
+    author = UserSerializer(read_only=True)
+    ingredients = IngredientSerializer(many=True)
+
+    class Meta:
+        model = Recipe
+        fields = (
+            'id',
+            'tags',
+            'author',
+            'ingredients',
+            'is_favorited',
+            'is_in_shopping_cart',
+            'name',
+            'image',
+            'text',
+            'cooking_time',
+            )
+
+    def get_is_favorited(self, obj):
+        return False
+
+    def get_is_in_shopping_cart(self, obj):
+        return False
