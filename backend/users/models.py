@@ -40,7 +40,7 @@ class User(AbstractUser):
         verbose_name_plural = 'Пользователи'
 
     def __str__(self):
-        return f'{self.username} {self.email}'
+        return f'{self.username}: {self.email}'
 
 
 class Follow(models.Model):

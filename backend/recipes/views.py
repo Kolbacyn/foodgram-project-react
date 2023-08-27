@@ -1,10 +1,13 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from recipes.models import Tag, Ingredient, Recipe
+from recipes.models import Tag, Ingredient, Recipe, Favorite, ShoppingCart
+from recipes.utils import add_or_delete
 from api.serializers import (TagSerializer, IngredientSerializer,
-                             RecipeSerializer)
+                             RecipeSerializer, FavoriteSerializer,
+                             ShoppingCartAddSerializer)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -46,3 +49,23 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = (IsAuthenticated,)
+
+    @action(
+        detail=True,
+        methods=['POST', 'DELETE'],
+        permission_classes=[IsAuthenticated]
+    )
+    def favorite(self, request, pk):
+        return add_or_delete(
+            FavoriteSerializer, Favorite, request, pk
+        )
+
+    @action(
+        detail=True,
+        methods=['POST', 'DELETE'],
+        permission_classes=[IsAuthenticated]
+    )
+    def shopping_cart(self, request, pk):
+        return add_or_delete(
+            ShoppingCartAddSerializer, ShoppingCart, request, pk
+        )

@@ -2,6 +2,7 @@ from django.db import models
 from django.core import validators
 
 from users.models import User
+from recipes.abstract_models import AbstractModelForCartAndFavorite
 
 
 class Tag(models.Model):
@@ -30,6 +31,9 @@ class Tag(models.Model):
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
 
+    def __str__(self):
+        return self.name
+
 
 class Ingredient(models.Model):
     """Модель ингидиента."""
@@ -50,7 +54,10 @@ class Ingredient(models.Model):
     class Meta:
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
-        ordering = ('name',)
+        ordering = ('id',)
+
+    def __str__(self):
+        return self.name
 
 
 class Recipe(models.Model):
@@ -59,7 +66,7 @@ class Recipe(models.Model):
         User,
         on_delete=models.CASCADE,
         verbose_name='Автор рецепта',
-        null=False,
+        null=True,
         blank=False,
         default=None
     )
@@ -93,3 +100,52 @@ class Recipe(models.Model):
             ),
         ),
     )
+
+    class Meta:
+        verbose_name = 'Рецепт'
+        verbose_name_plural = 'Рецепты'
+        ordering = ('name',)
+
+    def __str__(self):
+        return self.name
+
+
+class ShoppingCart(AbstractModelForCartAndFavorite):
+    """Модель добавления содержимого рецепта в список покупок."""
+    ingredients = models.ForeignKey(
+        Ingredient,
+        null=True,
+        on_delete=models.CASCADE,
+        verbose_name='Ингредиенты'
+    )
+
+    class Meta:
+        verbose_name = 'Покупка'
+        verbose_name_plural = 'Покупки'
+        default_related_name = 'groceries'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'ingredients'],
+                name='unique_grocery'
+            )
+        ]
+
+    def __str__(self):
+        return f'Ингредиенты для {self.recipe} добавлены в Ваш список покупок'
+
+
+class Favorite(AbstractModelForCartAndFavorite):
+    """Модель добавления рецепта в избранное."""
+    class Meta():
+        verbose_name = 'Избранный рецепт'
+        verbose_name_plural = 'Избранные рецепты'
+        default_related_name = 'favorites'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_favorite_recipe'
+            )
+        ]
+
+    def __str__(self):
+        return f'{self.recipe} в избранном пользователя {self.user.username}'
