@@ -41,10 +41,6 @@ class Ingredient(models.Model):
         max_length=200,
         verbose_name='Название ингредиента',
     )
-    amount = models.PositiveIntegerField(
-        verbose_name='Количество ингредиента',
-        null=True
-    )
     measurement_unit = models.CharField(
         max_length=200,
         verbose_name='Единицы измерения',
@@ -73,10 +69,12 @@ class Recipe(models.Model):
     tags = models.ManyToManyField(
         Tag,
         verbose_name='Теги к рецепту',
+        related_name='tags'
     )
     ingredients = models.ManyToManyField(
         Ingredient,
         verbose_name='необходимые ингредиенты',
+        through='RecipeIngredientRelation',
     )
     name = models.CharField(
         max_length=200,
@@ -149,3 +147,44 @@ class Favorite(AbstractModelForCartAndFavorite):
 
     def __str__(self):
         return f'{self.recipe} в избранном пользователя {self.user.username}'
+
+
+class RecipeIngredientRelation(models.Model):
+    """Модель связывающая рецепты и ингредиенты."""
+    recipe = models.ForeignKey(
+        Recipe,
+        verbose_name='Связаный рецепт',
+        related_name='related_recipe',
+        on_delete=models.CASCADE
+    )
+    ingredient = models.ForeignKey(
+        Ingredient,
+        verbose_name='Связаный ингредиент',
+        related_name='list_of_ingredients',
+        on_delete=models.CASCADE
+    )
+    amount = models.PositiveSmallIntegerField(
+        default=0,
+        verbose_name='',
+        validators=(
+            validators.MinValueValidator(
+                0,
+                'Введите значение выше нуля.',
+            ),
+            validators.MaxValueValidator(
+                1000,
+                'Превышено максимальное количество ингредиента!',
+            ),
+        ),
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['ingredient', 'recipe'],
+                name='unique_ingredient_recipe'
+            )
+        ]
+
+    def __str__(self):
+        return f'{self.amount} {self.ingredient}'

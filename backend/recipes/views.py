@@ -7,13 +7,13 @@ from recipes.models import Tag, Ingredient, Recipe, Favorite, ShoppingCart
 from recipes.utils import add_or_delete
 from api.serializers import (TagSerializer, IngredientSerializer,
                              RecipeSerializer, FavoriteSerializer,
-                             ShoppingCartAddSerializer)
+                             ShoppingCartAddSerializer, RecipeEditSerializer)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     """Отображение тегов."""
     queryset = Tag.objects.all().order_by('name')
-    serializer_class = TagSerializer
+    serializer_class = TagSerializer()
     permission_classes = (AllowAny,)
 
     def perform_create(self, serializer):
@@ -49,6 +49,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = (IsAuthenticated,)
+
+    def get_serializer_class(self):
+        if self.request.method in ('POST', 'PUT', 'PATCH'):
+            return RecipeEditSerializer
+        return RecipeSerializer
 
     @action(
         detail=True,

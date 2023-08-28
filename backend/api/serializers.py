@@ -1,8 +1,25 @@
+import base64
+from django.core.files.base import ContentFile
+from django.db.transaction import atomic
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
 from users.models import User, Follow
-from recipes.models import Tag, Ingredient, Recipe, Favorite, ShoppingCart
+from recipes.models import (Tag, Ingredient, Recipe, Favorite,
+                            RecipeIngredientRelation, ShoppingCart)
+
+
+class Base64ImageField(serializers.ImageField):
+    """"""
+    def to_internal_value(self, data):
+        if isinstance(data, str) and data.startswith('data:image'):
+            format, imgstr = data.split(';base64,')
+            ext = format.split('/')[-1]
+
+            data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
+
+        return super().to_internal_value(data)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -82,13 +99,50 @@ class IngredientSerializer(serializers.ModelSerializer):
         )
 
 
+class IngredientInRecipeSerializer(serializers.ModelSerializer):
+    """ Сериализатор для вывода количество ингредиентов в рецепте."""
+
+    id = serializers.PrimaryKeyRelatedField(
+        read_only=True,
+        source='ingredient'
+    )
+    name = serializers.SlugRelatedField(
+        source='ingredient',
+        read_only=True,
+        slug_field='name'
+    )
+    measurement_unit = serializers.SlugRelatedField(
+        source='ingredient',
+        read_only=True,
+        slug_field='measurement_unit'
+    )
+
+    class Meta:
+        model = RecipeIngredientRelation
+        fields = ('id', 'name', 'measurement_unit', 'amount')
+
+    def __init__(self, *args, **kwargs):
+        """Определяем возможность выбора полей."""
+        fields = kwargs.pop('fields', None)
+        super().__init__(*args, **kwargs)
+
+        if fields is not None:
+            allowed = set(fields)
+            existing = set(self.fields)
+            for field_name in existing - allowed:
+                self.fields.pop(field_name)
+
+
 class RecipeSerializer(serializers.ModelSerializer):
     """Сериализатор рецептов."""
     is_favorited = serializers.SerializerMethodField(read_only=True)
     is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
-    tags = TagSerializer(many=True)
+    tags = TagSerializer(many=True, read_only=True)
     author = UserSerializer(read_only=True)
-    ingredients = IngredientSerializer(many=True)
+    ingredients = IngredientInRecipeSerializer(
+        read_only=True,
+        many=True,
+        source='related_recipe')
 
     class Meta:
         model = Recipe
@@ -106,12 +160,14 @@ class RecipeSerializer(serializers.ModelSerializer):
             )
 
     def get_is_favorited(self, obj):
+        """проверяем наличие рецепта в избранном."""
         user = self.context.get("view").request.user
         if user.is_anonymous:
             return False
         return user.favorites.filter(recipe=obj).exists()
 
     def get_is_in_shopping_cart(self, obj):
+        """Проверям наличие рецепта в корзине."""
         user = self.context.get("view").request.user
         if user.is_anonymous:
             return False
@@ -127,6 +183,61 @@ class RecipeSerializer(serializers.ModelSerializer):
             existing = set(self.fields)
             for field_name in existing - allowed:
                 self.fields.pop(field_name)
+
+
+class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
+    """Ингредиент и количество для создания рецепта."""
+    id = serializers.IntegerField()
+
+    class Meta:
+        model = RecipeIngredientRelation
+        fields = ('id', 'amount')
+
+
+class RecipeEditSerializer(serializers.ModelSerializer):
+    """Сериализатор создания/редактирования рецептов."""
+    id = serializers.PrimaryKeyRelatedField
+    cooking_time = serializers.IntegerField()
+    ingredients = RecipeIngredientCreateSerializer(
+        many=True,
+    )
+    image = Base64ImageField(required=True)
+
+    class Meta(RecipeSerializer.Meta):
+        model = Recipe
+        fields = (
+            'ingredients',
+            'tags',
+            'name',
+            'image',
+            'text',
+            'cooking_time',
+        )
+        required_fileds = '__all__'
+
+    @atomic
+    def tags_and_ingredients_set(self, recipe, tags, ingredients):
+        recipe.tags.set(tags)
+        RecipeIngredientRelation.objects.bulk_create(
+            [RecipeIngredientRelation(
+                recipe=recipe,
+                ingredient=Ingredient.objects.get(pk=ingredient['id']),
+                amount=ingredient['amount']
+            ) for ingredient in ingredients]
+        )
+
+    @atomic
+    def create(self, validated_data):
+        tags = validated_data.pop('tags')
+        ingredients = validated_data.pop('ingredients')
+        recipe = Recipe.objects.create(author=self.context['request'].user,
+                                       **validated_data)
+        self.tags_and_ingredients_set(recipe, tags, ingredients)
+        return recipe
+
+    def to_representation(self, instance):
+        return RecipeSerializer(instance,
+                                context=self.context).data
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
