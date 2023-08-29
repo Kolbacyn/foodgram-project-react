@@ -33,6 +33,12 @@ class User(AbstractUser):
         blank=False,
         null=False,
     )
+    password = models.CharField(
+        'Пароль',
+        max_length=150,
+        blank=False,
+        null=False
+    )
 
     class Meta:
         ordering = ('id',)
