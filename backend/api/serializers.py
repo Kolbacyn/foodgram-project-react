@@ -228,12 +228,52 @@ class RecipeEditSerializer(serializers.ModelSerializer):
 
     @atomic
     def create(self, validated_data):
+        """Создаем рецепт"""
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
         recipe = Recipe.objects.create(author=self.context['request'].user,
                                        **validated_data)
         self.tags_and_ingredients_set(recipe, tags, ingredients)
         return recipe
+
+    @atomic
+    def update(self, instance, validated_data):
+        """Редактируем рецепт"""
+        # Обновляем картинку
+        if 'image' in validated_data:
+            instance.image.delete(save=False)
+            instance.image = self.fields['image'].to_internal_value(
+                validated_data['image']
+            )
+
+        # Обновляем теги
+        if 'tags' in validated_data:
+            tags_data = validated_data.pop('tags')
+            tags = Tag.objects.filter(id__in=tags_data)
+            instance.tags.set(tags)
+
+        # Обновляем ингредиенты
+        if 'ingredients' in validated_data:
+            ingredients_data = validated_data.pop('ingredients')
+            recipe_ingredients = []
+            for ingredient_data in ingredients_data:
+                ingredient_id = ingredient_data.pop('id')
+                amount = ingredient_data.pop('amount')
+                ingredient = Ingredient.objects.get(id=ingredient_id)
+                recipe_ingredients.append(
+                    RecipeIngredientRelation(
+                        recipe=instance, ingredient=ingredient, amount=amount
+                    )
+                )
+            RecipeIngredientRelation.objects.filter(recipe=instance).delete()
+            RecipeIngredientRelation.objects.bulk_create(recipe_ingredients)
+
+        # Обновляем рецепт
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+
+        return instance
 
     def to_representation(self, instance):
         return RecipeSerializer(instance,

@@ -5,6 +5,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from recipes.models import Tag, Ingredient, Recipe, Favorite, ShoppingCart
 from recipes.utils import add_or_delete
+from api.permissions import AuthorOrReadOnly
 from api.serializers import (TagSerializer, IngredientSerializer,
                              RecipeSerializer, FavoriteSerializer,
                              ShoppingCartAddSerializer, RecipeEditSerializer)
@@ -48,7 +49,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     """Рецепты."""
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (AuthorOrReadOnly,)
 
     def get_serializer_class(self):
         if self.request.method in ('POST', 'PUT', 'PATCH'):
