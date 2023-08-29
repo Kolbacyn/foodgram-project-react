@@ -20,7 +20,3 @@ def add_or_delete(add_serializer, model, request, recipe_id):
         recipe=Recipe.objects.get(id=recipe_id)
     ).delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-def download():
-    pass
