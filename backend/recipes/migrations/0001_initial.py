@@ -33,7 +33,7 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=200, verbose_name='Название рецепта')),
                 ('text', models.TextField(verbose_name='Описание рецепта')),
                 ('image', models.ImageField(default=None, null=True, upload_to='', verbose_name='Картинка')),
-                ('cooking_time', models.DurationField(default=datetime.timedelta(seconds=60), verbose_name='Время приготовления')),
+                ('cooking_time', models.PositiveSmallIntegerField(default=0, validators=[django.core.validators.MinValueValidator(0, message='Минимальное время приготовления = 0')], verbose_name='Время приготовления')),
             ],
             options={
                 'verbose_name': 'Рецепт',
