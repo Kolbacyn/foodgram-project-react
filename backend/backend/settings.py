@@ -7,7 +7,7 @@ SECRET_KEY = 'django-insecure-q3nsduojya_m!bomjuo6f7&3g#osk!2&k^kd)n78*%+uq=oh6d
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['217.66.157.143', '127.0.0.1', 'localhost', 'foodiegram.hopto.org']
 
 
 INSTALLED_APPS = [
@@ -64,8 +64,6 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        # Меняем настройку Django: теперь для работы будет использоваться
-        # бэкенд postgresql
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv('POSTGRES_DB', 'django'),
         'USER': os.getenv('POSTGRES_USER', 'django'),
@@ -105,6 +103,7 @@ USE_L10N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'collected_static'
 STATICFILES_DIRS = ((BASE_DIR / 'static/'),)
 
 MEDIA_URL = '/media/'
@@ -120,18 +119,20 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 6,
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
 }
 
 DJOSER = {
     'LOGIN_FIELD': 'email',
-    'HIDE_USER': 'False',
+    'HIDE_USER': False,
     'SERIALIZERS': {
         'current_user': 'api.serializers.UserSerializer',
+        'user': 'api.serializers.UserSerializer',
+        'user_list': 'api.serializers.UserSerializer',
     },
     'PERMISSIONS': {
-        'user': ['djoser.permissions.CurrentUserOrAdminOrReadOnly'],
+        'user': ['api.permissions.AuthorOrReadOnly'],
+        'user_list': ['api.permissions.AuthorOrReadOnly'],
     },
 }

@@ -2,6 +2,8 @@ import io
 from django.shortcuts import get_object_or_404
 from django.db.models import Sum
 from django.http import FileResponse
+
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -9,6 +11,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from recipes.models import (Tag, Ingredient, Recipe, Favorite,
                             ShoppingCart, RecipeIngredientRelation)
 from recipes.utils import add_or_delete
+from api.filters import IngredientFilter, RecipeFilter
+from api.pagination import LimitPageNumberPagination
 from api.permissions import AuthorOrReadOnly
 from api.serializers import (TagSerializer, IngredientSerializer,
                              RecipeSerializer, FavoriteSerializer,
@@ -37,6 +41,9 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all().order_by('name')
     serializer_class = IngredientSerializer
     permission_classes = (AllowAny, IsAuthenticated,)
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = IngredientFilter
+
 
     def perform_create(self, serializer):
         ingredient = get_object_or_404(
@@ -54,6 +61,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = (AuthorOrReadOnly,)
+    pagination_class = LimitPageNumberPagination
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = RecipeFilter
 
     def get_serializer_class(self):
         if self.request.method in ('POST', 'PUT', 'PATCH'):

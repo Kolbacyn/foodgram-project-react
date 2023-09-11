@@ -13,17 +13,11 @@ services:
     env_file: .env
     depends_on:
       - db
-    volumes:
-      - foodgram_static:/backend_static
+    
   frontend:
     image: foodgram_frontend
     env_file: .env
-    command: cp -r /app/build/. /frontend_static/
-    volumes:
-      - foodgram_static:/frontend_static
   gateway:
     image: foodgram_gateway
-    volumes:
-      - foodgram_static:/staticfiles/
     ports:
       - 8000:80
