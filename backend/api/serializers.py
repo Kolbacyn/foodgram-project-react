@@ -2,7 +2,6 @@ import base64
 
 from django.core.files.base import ContentFile
 from django.db.transaction import atomic
-from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
@@ -27,6 +26,7 @@ class ShortRecipeSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Recipe.
     Определён укороченный набор полей для некоторых эндпоинтов."""
     image = Base64ImageField()
+
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
@@ -149,7 +149,8 @@ class RecipeSerializer(serializers.ModelSerializer):
     ingredients = IngredientInRecipeSerializer(
         read_only=True,
         many=True,
-        source='related_recipe')
+        source='related_recipe'
+    )
 
     class Meta:
         model = Recipe
@@ -175,7 +176,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def get_is_in_shopping_cart(self, obj):
         """Проверям наличие рецепта в корзине."""
-        request  = self.context.get('request')
+        request = self.context.get('request')
         if request is None or request.user.is_anonymous:
             return False
         return request.user.groceries.filter(recipe=obj).exists()
@@ -209,7 +210,7 @@ class RecipeEditSerializer(serializers.ModelSerializer):
         many=True,
     )
     tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(),
-                                            many=True)
+                                              many=True)
     image = Base64ImageField(required=True)
 
     class Meta(RecipeSerializer.Meta):
@@ -360,4 +361,3 @@ class FollowSerializer(serializers.ModelSerializer):
 
     def get_is_subscribed(self, obj):
         return True
-
