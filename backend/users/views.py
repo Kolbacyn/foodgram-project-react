@@ -21,14 +21,14 @@ class CustomUserViewSet(UserViewSet):
     def get_serializer_class(self):
         """Выбираем сериализатор."""
         pass
-        if self.request.method in ('POST','PUT', 'PATCH', ):
+        if self.request.method in ('POST', 'PUT', 'PATCH',):
             return UserCreateSerializer
         return UserSerializer
 
     @action(
         detail=False,
         methods=('GET',),
-        permission_classes=(IsAuthenticated, )
+        permission_classes=(IsAuthenticated,)
     )
     def subscriptions(self, request):
         """Подписки пользователя."""
