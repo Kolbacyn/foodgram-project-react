@@ -165,7 +165,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             'image',
             'text',
             'cooking_time',
-            )
+        )
 
     def get_is_favorited(self, obj):
         """проверяем наличие рецепта в избранном."""

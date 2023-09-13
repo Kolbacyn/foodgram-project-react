@@ -15,7 +15,7 @@ class CustomUserViewSet(UserViewSet):
     """Отображение кастомной модели пользователей."""
     queryset = User.objects.all()
     serializer_class = UserSerializer, UserCreateSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, )
     pagination_class = LimitPageNumberPagination
 
     def get_serializer_class(self):
@@ -28,7 +28,7 @@ class CustomUserViewSet(UserViewSet):
     @action(
         detail=False,
         methods=('GET',),
-        permission_classes=(IsAuthenticated,)
+        permission_classes=(IsAuthenticated, )
     )
     def subscriptions(self, request):
         """Подписки пользователя."""
@@ -41,6 +41,7 @@ class CustomUserViewSet(UserViewSet):
                 context={'request': request},
             ).data
         )
+
     @action(
         detail=True,
         methods=['POST', 'DELETE'],
@@ -61,4 +62,3 @@ class CustomUserViewSet(UserViewSet):
                               author=author).delete()
             return Response({'detail': 'Успешная отписка'},
                             status=status.HTTP_204_NO_CONTENT)
-

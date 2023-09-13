@@ -3,10 +3,11 @@ from django_filters import rest_framework as filters
 from recipes.models import Ingredient, Recipe
 from users.models import User
 
+
 class IngredientFilter(filters.FilterSet):
     """Фильтр для ингредиентов."""
     name = filters.CharFilter(
-        field_name = 'name',
+        field_name='name',
         lookup_expr='icontains'
     )
 
@@ -20,7 +21,9 @@ class RecipeFilter(filters.FilterSet):
 
     tags = filters.AllValuesMultipleFilter(field_name='tags__slug')
     author = filters.ModelChoiceFilter(queryset=User.objects.all())
-    is_in_shopping_cart = filters.BooleanFilter(method='filter_is_in_shopping_cart')
+    is_in_shopping_cart = filters.BooleanFilter(
+        method='filter_is_in_shopping_cart'
+    )
     is_favorited = filters.BooleanFilter(method='filter_is_favorited')
 
     def filter_is_favorited(self, queryset, name, value):
