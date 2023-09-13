@@ -230,7 +230,7 @@ class RecipeEditSerializer(serializers.ModelSerializer):
         RecipeIngredientRelation.objects.bulk_create(
             [RecipeIngredientRelation(
                 recipe=recipe,
-                ingredient=Ingredient.objects.get(pk=ingredient['id']),
+                ingredient=ingredient['id'],
                 amount=ingredient['amount']
             ) for ingredient in ingredients]
         )
@@ -240,7 +240,7 @@ class RecipeEditSerializer(serializers.ModelSerializer):
         """Создаем рецепт"""
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
-        # image = validated_data.pop('image')
+        # image = validated_datapop('image')
         recipe = Recipe.objects.create(author=self.context['request'].user,
                                        **validated_data)
         self.tags_and_ingredients_set(recipe, tags, ingredients)
@@ -284,10 +284,6 @@ class RecipeEditSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
-
-    def to_representation(self, instance):
-        return RecipeSerializer(instance,
-                                context=self.context).data
 
 
 class FavoriteSerializer(serializers.ModelSerializer):

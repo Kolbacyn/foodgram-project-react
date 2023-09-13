@@ -5,9 +5,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-q3nsduojya_m!bomjuo6f7&3g#osk!2&k^kd)n78*%+uq=oh6d'
 
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ['217.66.157.143', '127.0.0.1', 'localhost', 'foodiegram.hopto.org']
+ALLOWED_HOSTS = ['51.250.106.8', '127.0.0.1', 'localhost', 'foodiegram.hopto.org']
 
 
 INSTALLED_APPS = [
@@ -119,7 +119,6 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 6,
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
     ),
 }
 

@@ -24,6 +24,7 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all().order_by('name')
     serializer_class = TagSerializer
     permission_classes = (AllowAny,)
+    pagination_class = None
 
     def perform_create(self, serializer):
         tag = get_object_or_404(
@@ -41,9 +42,9 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all().order_by('name')
     serializer_class = IngredientSerializer
     permission_classes = (AllowAny, IsAuthenticated,)
+    pagination_class = None
     filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientFilter
-
 
     def perform_create(self, serializer):
         ingredient = get_object_or_404(
