@@ -3,7 +3,7 @@ import base64
 from django.core.files.base import ContentFile
 from django.conf import settings
 from django.db.transaction import atomic
-from rest_framework import serializers, exceptions
+from rest_framework import serializers, exceptions, status
 from rest_framework.validators import UniqueTogetherValidator
 
 from users.models import User, Follow
@@ -68,12 +68,12 @@ class UserCreateSerializer(UserSerializer):
         )
         extra_kwargs = {'password': {'write_only': True}}
 
-    # def validate_username(self, value):
-    #     if value == "me":
-    #         raise exceptions.ValidationError(
-    #             settings.USERNAME_ME_ERROR
-    #         )
-    #     return value
+    def validate_username(self, value):
+        if value == "me":
+            raise exceptions.ValidationError(
+                settings.USERNAME_ME_ERROR
+            )
+        return value
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -264,15 +264,15 @@ class RecipeEditSerializer(serializers.ModelSerializer):
             amount = item['amount']
             if int(amount) < 1:
                 raise serializers.ValidationError({
-                   'amount': settings.MIN_INGREDIENT_AMOUNT
+                    'amount': settings.MIN_INGREDIENT_AMOUNT
                 })
             if int(amount) > 1000:
                 raise serializers.ValidationError({
-                   'amount': settings.MAX_INGREDIENT_AMOUNT
+                    'amount': settings.MAX_INGREDIENT_AMOUNT
                 })
             if item['id'] in list_of_ingredients:
                 raise serializers.ValidationError({
-                   'ingredient': settings.UNIQUE_INGREDIENT_ERROR
+                    'ingredient': settings.UNIQUE_INGREDIENT_ERROR
                 })
             list_of_ingredients.append(item['id'])
         return data
@@ -300,7 +300,7 @@ class RecipeEditSerializer(serializers.ModelSerializer):
                     {'tags': settings.UNIQUE_TAG_ERROR}
                 )
             list_of_tags.append(tag['id'])
-        return value
+        return data
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
@@ -315,6 +315,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
                 message='Рецепт уже добавлен в избранное!'
             )
         )
+
 
 class ShoppingCartAddSerializer(serializers.ModelSerializer):
     """Сериализатор добавления в корзину."""
@@ -351,12 +352,12 @@ class FollowSerializer(serializers.ModelSerializer):
         if Follow.objects.filter(subscriber=user, author=author).exists():
             raise exceptions.ValidationError(
                 detail=settings.EXISTING_FOLLOW_ERROR,
-                code=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST
             )
         if user == author:
             raise exceptions.ValidationError(
                 detail=settings.SELF_FOLLOW_ERROR,
-                code=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST
             )
         return data
 
