@@ -3,11 +3,14 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-q3nsduojya_m!bomjuo6f7&3g#osk!2&k^kd)n78*%+uq=oh6d'
 
-DEBUG = False
+SECRET_KEY = os.getenv('SECRET_KEY', default='your_secret_key')
+PORT = os.getenv('PORT')
+DOMAIN = os.getenv('DOMAIN')
 
-ALLOWED_HOSTS = ['51.250.106.8', '127.0.0.1', 'localhost', 'foodiegram.hopto.org']
+DEBUG = os.getenv('DEBUG', default='False') == 'True'
+
+ALLOWED_HOSTS = [PORT, DOMAIN, 'localhost', '127.0.0.1']
 
 
 INSTALLED_APPS = [
@@ -135,3 +138,32 @@ DJOSER = {
         'user_list': ['api.permissions.AuthorOrReadOnly'],
     },
 }
+
+# Переменные, используемые в проекте.
+# ------------------------------------------------------
+
+# Константы:
+COLOR_LENGTH = 7
+CONTENT_TYPE = 'text/plain'
+MIN_COOKING_TIME_VALUE = 1
+MIN_AMOUNT_VALUE = 1
+MAX_AMOUNT_VALUE = 1000
+FILENAME = 'shopping_cart.txt'
+MAX_LENGTH = 200
+MAX_EMAIL_LENGTH = 254
+MAX_LENGHT_FOR_USER = 150
+
+# Регулярные выражени:
+COLOR_REGEX = r'^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
+
+# Сообщения:
+NOT_A_HEX_COLOR = 'Введенное значение не является цветом в формате HEX'
+MIN_COOKING_TIME = 'Минимальное время приготовления - 1'
+MIN_INGREDIENT_AMOUNT = 'Минимальное количество ингредиента - 1'
+MAX_INGREDIENT_AMOUNT = 'Максимальное значение количество ингредиента - 1000'
+UNIQUE_INGREDIENT_ERROR = 'Ингредиенты в рецепте не должны повторяться.'
+SELF_FOLLOW_ERROR = 'Нельзя подписаться на себя.'
+EXISTING_FOLLOW_ERROR = 'Вы уже подписаны на этого автора.'
+NO_TAG_ERROR = 'Требуется добавить теги к рецепту.'
+UNIQUE_TAG_ERROR = 'Теги к рецепту должны быть уникальными.'
+USERNAME_ME_ERROR = 'Невозможно создать пользователя с таким именем.'

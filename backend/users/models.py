@@ -1,47 +1,47 @@
 from django.contrib.auth.models import AbstractUser
+from django.conf import settings 
 from django.db import models
 
 
 class User(AbstractUser):
     """Кастомная модель пользователя."""
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
+    REQUIRED_FIELDS = ('username', 'first_name', 'last_name')
 
     email = models.CharField(
         verbose_name='Адрес электронной почты',
-        max_length=254,
+        max_length=settings.MAX_EMAIL_LENGTH,
         blank=False,
         null=False,
         unique=True,
     )
     username = models.CharField(
         verbose_name='Уникальное имя пользователя',
-        max_length=150,
+        max_length=settings.MAX_LENGHT_FOR_USER,
         blank=False,
         null=False,
         unique=True,
     )
     first_name = models.CharField(
         verbose_name='Имя',
-        max_length=150,
+        max_length=settings.MAX_LENGHT_FOR_USER,
         blank=False,
         null=False,
     )
     last_name = models.CharField(
         verbose_name='Фамилия',
-        max_length=150,
+        max_length=settings.MAX_LENGHT_FOR_USER,
         blank=False,
         null=False,
     )
     password = models.CharField(
         'Пароль',
-        max_length=150,
+        max_length=settings.MAX_LENGHT_FOR_USER,
         blank=False,
         null=False
     )
 
     class Meta:
-        ordering = ('id',)
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
@@ -67,13 +67,12 @@ class Follow(models.Model):
     class Meta:
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
-        ordering = ('id',)
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
-                fields=['subscriber', 'author'],
+                fields=('subscriber', 'author'),
                 name='unique_follow'
             ),
-        ]
+        )
 
     def __str__(self):
         return f'Пользователь {self.subscriber} подписан на {self.author}'

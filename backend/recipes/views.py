@@ -1,26 +1,26 @@
-from django.shortcuts import get_object_or_404
+from django.conf import settings
 from django.db.models import Sum
-from django.http import FileResponse
-
 from django_filters.rest_framework import DjangoFilterBackend
+from django.http import FileResponse
+from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from recipes.models import (Tag, Ingredient, Recipe, Favorite,
-                            ShoppingCart, RecipeIngredientRelation)
-from recipes.utils import add_or_delete
 from api.filters import IngredientFilter, RecipeFilter
 from api.pagination import LimitPageNumberPagination
 from api.permissions import AuthorOrReadOnly
 from api.serializers import (TagSerializer, IngredientSerializer,
                              RecipeSerializer, FavoriteSerializer,
                              ShoppingCartAddSerializer, RecipeEditSerializer)
+from recipes.models import (Tag, Ingredient, Recipe, Favorite,
+                            ShoppingCart, RecipeIngredientRelation)
+from recipes.utils import add_or_delete
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
-    """Отображение тегов."""
-    queryset = Tag.objects.all().order_by('name')
+    """Теги."""
+    queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = (AllowAny,)
     pagination_class = None
@@ -31,16 +31,15 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
             id=self.kwargs.get('tag_id')
         )
         serializer.save(
-            author=self.request.user.is_superuser,
             tag=tag
         )
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     """Ингредиенты."""
-    queryset = Ingredient.objects.all().order_by('name')
+    queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    permission_classes = (AllowAny, IsAuthenticated,)
+    permission_classes = (AllowAny, IsAuthenticated)
     pagination_class = None
     filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientFilter
@@ -51,7 +50,6 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
             id=self.kwargs.get('ingredient_id')
         )
         serializer.save(
-            author=self.request.user.is_superuser,
             ingredient=ingredient
         )
 
@@ -72,30 +70,33 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(
         detail=True,
-        methods=['POST', 'DELETE'],
-        permission_classes=[IsAuthenticated]
+        methods=('POST', 'DELETE'),
+        permission_classes=(IsAuthenticated,)
     )
     def favorite(self, request, pk):
+        """Добавляем или удаляем рецепт в избранное."""
         return add_or_delete(
             FavoriteSerializer, Favorite, request, pk
         )
 
     @action(
         detail=True,
-        methods=['POST', 'DELETE'],
-        permission_classes=[IsAuthenticated]
+        methods=('POST', 'DELETE'),
+        permission_classes=(IsAuthenticated,)
     )
     def shopping_cart(self, request, pk):
+        """Добавляем или удаляем рецепт в корзину покупок."""
         return add_or_delete(
             ShoppingCartAddSerializer, ShoppingCart, request, pk
         )
 
     @action(
         detail=False,
-        methods=['GET'],
-        permission_classes=[IsAuthenticated]
+        methods=('GET',),
+        permission_classes=(IsAuthenticated,)
     )
     def download_shopping_cart(self, request):
+        """Загружаем список покупок в формате .txt"""
         ingredients = RecipeIngredientRelation.objects.filter(
             recipe__groceries__user=request.user
         ).values(
@@ -107,7 +108,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             unit = ingredient['ingredient__measurement_unit']
             amount = ingredient['ingredient_amount']
             groceries.append(f'\n{name} - {amount}, {unit}')
-        response = FileResponse(groceries, content_type='text/plain')
+        response = FileResponse(groceries, content_type=settings.CONTENT_TYPE)
         response['Content-Disposition'] = \
-            'attachment; filename="shopping_cart.txt"'
+            'attachment; filename=settings.FILENAME'
         return response

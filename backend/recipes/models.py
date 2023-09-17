@@ -1,23 +1,30 @@
-from django.db import models
+from django.conf import settings
 from django.core import validators
+from django.db import models
 
-from users.models import User
 from recipes.abstract_models import AbstractModelForCartAndFavorite
+from users.models import User
 
 
 class Tag(models.Model):
     """Модель тега."""
     name = models.CharField(
-        max_length=200,
+        max_length=settings.MAX_LENGTH,
         verbose_name='Название',
     )
     slug = models.SlugField(
-        max_length=200,
+        max_length=settings.MAX_LENGTH,
         verbose_name='Уникальный слаг',
     )
     color = models.CharField(
-        max_length=7,
+        max_length=settings.COLOR_LENGTH,
         default="#ffffff",
+        validators=(
+            validators.RegexValidator(
+                regex=settings.COLOR_REGEX,
+                message=settings.NOT_A_HEX_COLOR
+            ),
+        ),
         verbose_name='Цвет в HEX',
     )
 
@@ -28,6 +35,7 @@ class Tag(models.Model):
                 name='unique_tag',
             ),
         )
+        ordering = ('name',)
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
 
@@ -38,19 +46,19 @@ class Tag(models.Model):
 class Ingredient(models.Model):
     """Модель ингидиента."""
     name = models.CharField(
-        max_length=200,
+        max_length=settings.MAX_LENGTH,
         verbose_name='Название ингредиента',
     )
     measurement_unit = models.CharField(
-        max_length=200,
+        max_length=settings.MAX_LENGTH,
         verbose_name='Единицы измерения',
         null=True
     )
 
     class Meta:
+        ordering = ('name',)
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
-        ordering = ('id',)
 
     def __str__(self):
         return self.name
@@ -62,6 +70,7 @@ class Recipe(models.Model):
         User,
         on_delete=models.CASCADE,
         verbose_name='Автор рецепта',
+        related_name='recipes',
         null=True,
         blank=False,
         default=None
@@ -73,11 +82,11 @@ class Recipe(models.Model):
     )
     ingredients = models.ManyToManyField(
         Ingredient,
-        verbose_name='необходимые ингредиенты',
+        verbose_name='Необходимые ингредиенты',
         through='RecipeIngredientRelation',
     )
     name = models.CharField(
-        max_length=200,
+        max_length=settings.MAX_LENGTH,
         verbose_name='Название рецепта',
     )
     text = models.TextField(
@@ -90,11 +99,11 @@ class Recipe(models.Model):
     )
     cooking_time = models.PositiveSmallIntegerField(
         verbose_name='Время приготовления',
-        default=0,
+        default=settings.MIN_COOKING_TIME_VALUE,
         validators=(
             validators.MinValueValidator(
-                0,
-                message='Минимальное время приготовления = 0'
+                settings.MIN_COOKING_TIME_VALUE,
+                message=settings.MIN_COOKING_TIME
             ),
         ),
     )
@@ -121,12 +130,12 @@ class ShoppingCart(AbstractModelForCartAndFavorite):
         verbose_name = 'Покупка'
         verbose_name_plural = 'Покупки'
         default_related_name = 'groceries'
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
-                fields=['user', 'ingredients'],
+                fields=('user', 'ingredients'),
                 name='unique_grocery'
-            )
-        ]
+            ),
+        )
 
     def __str__(self):
         return f'Ингредиенты для {self.recipe} добавлены в Ваш список покупок'
@@ -134,16 +143,16 @@ class ShoppingCart(AbstractModelForCartAndFavorite):
 
 class Favorite(AbstractModelForCartAndFavorite):
     """Модель добавления рецепта в избранное."""
-    class Meta():
+    class Meta:
         verbose_name = 'Избранный рецепт'
         verbose_name_plural = 'Избранные рецепты'
         default_related_name = 'favorites'
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
-                fields=['user', 'recipe'],
+                fields=('user', 'recipe'),
                 name='unique_favorite_recipe'
-            )
-        ]
+            ),
+        )
 
     def __str__(self):
         return f'{self.recipe} в избранном пользователя {self.user.username}'
@@ -164,27 +173,27 @@ class RecipeIngredientRelation(models.Model):
         on_delete=models.CASCADE
     )
     amount = models.PositiveSmallIntegerField(
-        default=0,
-        verbose_name='',
+        default=settings.MIN_AMOUNT_VALUE,
+        verbose_name='Количество ингредиента',
         validators=(
             validators.MinValueValidator(
-                0,
-                'Введите значение выше нуля.',
+                settings.MIN_AMOUNT_VALUE,
+                message=settings.MIN_INGREDIENT_AMOUNT,
             ),
             validators.MaxValueValidator(
-                1000,
-                'Превышено максимальное количество ингредиента!',
+                settings.MAX_AMOUNT_VALUE,
+                message=settings.MAX_INGREDIENT_AMOUNT,
             ),
         ),
     )
 
     class Meta:
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
-                fields=['ingredient', 'recipe'],
+                fields=('ingredient', 'recipe'),
                 name='unique_ingredient_recipe'
-            )
-        ]
+            ),
+        )
 
     def __str__(self):
         return f'{self.amount} {self.ingredient}'
