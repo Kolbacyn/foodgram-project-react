@@ -13,10 +13,10 @@ from recipes.models import (Tag, Ingredient, Recipe, Favorite,
                             RecipeIngredientRelation, ShoppingCart)
 
 
-MIN_COOKING_TIME_ERROR = f'Минимальное время приготовления - {s.MIN_COOKING_TIME}'
-MAX_COOKING_TIME_ERROR = f'Максимальное время приготовления - {s.MAX_COOKING_TIME}'
-MIN_AMOUNT_ERROR = f'Минимальное количество ингредиента - {s.MIN_INGREDIENT_AMOUNT}'
-MAX_AMOUNT_ERROR = f'Максимальное количество ингредиента - {s.MAX_INGREDIENT_AMOUNT}'
+MIN_COOKING_TIME_ERROR = f'Минимальное время готовки - {s.MIN_COOKING_TIME}'
+MAX_COOKING_TIME_ERROR = f'Максимальное время готовки - {s.MAX_COOKING_TIME}'
+MIN_AMOUNT_ERROR = f'Минимальное количество - {s.MIN_INGREDIENT_AMOUNT}'
+MAX_AMOUNT_ERROR = f'Максимальное количество - {s.MAX_INGREDIENT_AMOUNT}'
 UNIQUE_INGREDIENT_ERROR = 'Ингредиенты в рецепте не должны повторяться.'
 NO_TAG_ERROR = 'Требуется добавить теги к рецепту.'
 UNIQUE_TAG_ERROR = 'Теги к рецепту должны быть уникальными.'
@@ -210,7 +210,7 @@ class RecipeEditSerializer(serializers.ModelSerializer):
         ingredients = validated_data.pop('ingredients')
         recipe = Recipe.objects.create(author=self.context['request'].user,
                                        **validated_data)
-        self.tags_and_ingredients_set(recipe, tags, ingredients)
+        tags_and_ingredients_set(recipe, tags, ingredients)
         return recipe
 
     @atomic

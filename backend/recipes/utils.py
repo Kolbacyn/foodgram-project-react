@@ -28,11 +28,11 @@ def delete_ingredient(model, request, recipe_id):
 
 
 def tags_and_ingredients_set(self, recipe, tags, ingredients):
-        recipe.tags.set(tags)
-        RecipeIngredientRelation.objects.bulk_create(
-            [RecipeIngredientRelation(
-                recipe=recipe,
-                ingredient=ingredient['id'],
-                amount=ingredient['amount']
-            ) for ingredient in ingredients]
-        )
+    recipe.tags.set(tags)
+    RecipeIngredientRelation.objects.bulk_create(
+        [RecipeIngredientRelation(
+            recipe=recipe,
+            ingredient=ingredient['id'],
+            amount=ingredient['amount']
+        ) for ingredient in ingredients]
+    )

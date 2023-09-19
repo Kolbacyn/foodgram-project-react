@@ -78,11 +78,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if request.method == 'POST':
             return add_ingredient(
                 FavoriteSerializer, Favorite, request, pk
-        )
+            )
         if request.method == 'DELETE':
             return delete_ingredient(
                 Favorite, request, pk
-        )
+            )
 
     @action(
         detail=True,
@@ -94,11 +94,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if request.method == 'POST':
             return add_ingredient(
                 ShoppingCartAddSerializer, ShoppingCart, request, pk
-        )
+            )
         if request.method == 'DELETE':
             return delete_ingredient(
                 ShoppingCart, request, pk
-        )
+            )
 
     @action(
         detail=False,

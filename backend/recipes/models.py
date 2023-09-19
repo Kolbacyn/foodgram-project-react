@@ -6,10 +6,10 @@ from recipes.abstract_models import AbstractModelForCartAndFavorite
 from users.models import User
 
 NOT_A_HEX_COLOR_ERROR = 'Введенное значение не является цветом в формате HEX'
-MIN_COOKING_TIME_ERROR = f'Минимальное время приготовления - {s.MIN_COOKING_TIME}'
-MAX_COOKING_TIME_ERROR = f'Максимальное время приготовления - {s.MAX_COOKING_TIME}'
-MIN_AMOUNT_ERROR = f'Минимальное количество ингредиента - {s.MIN_INGREDIENT_AMOUNT}'
-MAX_AMOUNT_ERROR = f'Максимальное количество ингредиента - {s.MAX_INGREDIENT_AMOUNT}'
+MIN_COOKING_TIME_ERROR = f'Минимальное время готовки - {s.MIN_COOKING_TIME}'
+MAX_COOKING_TIME_ERROR = f'Максимальное время готовки - {s.MAX_COOKING_TIME}'
+MIN_AMOUNT_ERROR = f'Минимальное количество - {s.MIN_INGREDIENT_AMOUNT}'
+MAX_AMOUNT_ERROR = f'Максимальное количество - {s.MAX_INGREDIENT_AMOUNT}'
 
 
 class Tag(models.Model):
