@@ -1,14 +1,27 @@
 import base64
 
 from django.core.files.base import ContentFile
-from django.conf import settings
+from django.conf import settings as s
 from django.db.transaction import atomic
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers, exceptions, status
 from rest_framework.validators import UniqueTogetherValidator
 
 from users.models import User, Follow
+from recipes.utils import tags_and_ingredients_set
 from recipes.models import (Tag, Ingredient, Recipe, Favorite,
                             RecipeIngredientRelation, ShoppingCart)
+
+
+MIN_COOKING_TIME_ERROR = f'Минимальное время приготовления - {s.MIN_COOKING_TIME}'
+MAX_COOKING_TIME_ERROR = f'Максимальное время приготовления - {s.MAX_COOKING_TIME}'
+MIN_AMOUNT_ERROR = f'Минимальное количество ингредиента - {s.MIN_INGREDIENT_AMOUNT}'
+MAX_AMOUNT_ERROR = f'Максимальное количество ингредиента - {s.MAX_INGREDIENT_AMOUNT}'
+UNIQUE_INGREDIENT_ERROR = 'Ингредиенты в рецепте не должны повторяться.'
+NO_TAG_ERROR = 'Требуется добавить теги к рецепту.'
+UNIQUE_TAG_ERROR = 'Теги к рецепту должны быть уникальными.'
+SELF_FOLLOW_ERROR = 'Нельзя подписаться на себя.'
+EXISTING_FOLLOW_ERROR = 'Вы уже подписаны на этого автора.'
 
 
 class Base64ImageField(serializers.ImageField):
@@ -67,13 +80,6 @@ class UserCreateSerializer(UserSerializer):
             'password',
         )
         extra_kwargs = {'password': {'write_only': True}}
-
-    def validate_username(self, value):
-        if value == "me":
-            raise exceptions.ValidationError(
-                settings.USERNAME_ME_ERROR
-            )
-        return value
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -197,16 +203,6 @@ class RecipeEditSerializer(serializers.ModelSerializer):
         )
         required_fileds = '__all__'
 
-    def tags_and_ingredients_set(self, recipe, tags, ingredients):
-        recipe.tags.set(tags)
-        RecipeIngredientRelation.objects.bulk_create(
-            [RecipeIngredientRelation(
-                recipe=recipe,
-                ingredient=ingredient['id'],
-                amount=ingredient['amount']
-            ) for ingredient in ingredients]
-        )
-
     @atomic
     def create(self, validated_data):
         """Создаем рецепт"""
@@ -240,7 +236,10 @@ class RecipeEditSerializer(serializers.ModelSerializer):
             for ingredient_data in ingredients_data:
                 ingredient_id = ingredient_data.pop('id')
                 amount = ingredient_data.pop('amount')
-                ingredient = Ingredient.objects.get(id=ingredient_id)
+                ingredient = get_object_or_404(
+                    Ingredient,
+                    id=ingredient_id
+                )
                 recipe_ingredients.append(
                     RecipeIngredientRelation(
                         recipe=instance, ingredient=ingredient, amount=amount
@@ -262,27 +261,31 @@ class RecipeEditSerializer(serializers.ModelSerializer):
         list_of_ingredients = []
         for item in ingredients:
             amount = item['amount']
-            if int(amount) < 1:
-                raise serializers.ValidationError({
-                    'amount': settings.MIN_INGREDIENT_AMOUNT
-                })
-            if int(amount) > 1000:
-                raise serializers.ValidationError({
-                    'amount': settings.MAX_INGREDIENT_AMOUNT
-                })
+            if int(amount) < s.MIN_INGREDIENT_AMOUNT:
+                raise exceptions.ValidationError(
+                    {'amount': MIN_AMOUNT_ERROR}
+                )
+            if int(amount) > s.MAX_INGREDIENT_AMOUN:
+                raise exceptions.ValidationError(
+                    {'amount': MAX_AMOUNT_ERROR}
+                )
             if item['id'] in list_of_ingredients:
-                raise serializers.ValidationError({
-                    'ingredient': settings.UNIQUE_INGREDIENT_ERROR
-                })
+                raise exceptions.ValidationError(
+                    {'ingredient': UNIQUE_INGREDIENT_ERROR}
+                )
             list_of_ingredients.append(item['id'])
         return data
 
     def validate_cooking_time(self, data):
         """Проверяем время приготовления рецепта."""
         cooking_time = self.initial_data.get('cooking_time')
-        if int(cooking_time) <= 0:
+        if int(cooking_time) < s.MIN_COOKING_TIME:
             raise exceptions.ValidationError(
-                {'cooking_time': settings.MIN_COOKING_TIME}
+                {'cooking_time': MIN_COOKING_TIME_ERROR}
+            )
+        if int(cooking_time) > s.MAX_COOKING_TIME:
+            raise exceptions.ValidationError(
+                {'cooking_time': MAX_COOKING_TIME_ERROR}
             )
         return data
 
@@ -291,13 +294,13 @@ class RecipeEditSerializer(serializers.ModelSerializer):
         tags = self.initial_data.get('tags')
         if not tags:
             raise exceptions.ValidationError(
-                {'tags': settings.NO_TAG_ERROR}
+                {'tags': NO_TAG_ERROR}
             )
         list_of_tags = []
         for tag in tags:
             if tag['id'] in list_of_tags:
                 raise exceptions.ValidationError(
-                    {'tags': settings.UNIQUE_TAG_ERROR}
+                    {'tags': UNIQUE_TAG_ERROR}
                 )
             list_of_tags.append(tag['id'])
         return data
@@ -313,7 +316,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
                 queryset=Favorite.objects.all(),
                 fields=('user', 'recipe'),
                 message='Рецепт уже добавлен в избранное!'
-            )
+            ),
         )
 
 
@@ -351,12 +354,12 @@ class FollowSerializer(serializers.ModelSerializer):
         user = self.context.get('request').user
         if Follow.objects.filter(subscriber=user, author=author).exists():
             raise exceptions.ValidationError(
-                detail=settings.EXISTING_FOLLOW_ERROR,
+                detail=EXISTING_FOLLOW_ERROR,
                 status=status.HTTP_400_BAD_REQUEST
             )
         if user == author:
             raise exceptions.ValidationError(
-                detail=settings.SELF_FOLLOW_ERROR,
+                detail=SELF_FOLLOW_ERROR,
                 status=status.HTTP_400_BAD_REQUEST
             )
         return data
@@ -378,6 +381,4 @@ class FollowSerializer(serializers.ModelSerializer):
     def get_is_subscribed(self, obj):
         """Проверяем подписан ли текущий пользователь на автора."""
         user = self.context.get('request').user
-        if Follow.objects.filter(subscriber=user, author=obj).exists():
-            return True
-        return False
+        return Follow.objects.filter(subscriber=user, author=obj).exists()

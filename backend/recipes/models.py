@@ -1,28 +1,34 @@
-from django.conf import settings
+from django.conf import settings as s
 from django.core import validators
 from django.db import models
 
 from recipes.abstract_models import AbstractModelForCartAndFavorite
 from users.models import User
 
+NOT_A_HEX_COLOR_ERROR = 'Введенное значение не является цветом в формате HEX'
+MIN_COOKING_TIME_ERROR = f'Минимальное время приготовления - {s.MIN_COOKING_TIME}'
+MAX_COOKING_TIME_ERROR = f'Максимальное время приготовления - {s.MAX_COOKING_TIME}'
+MIN_AMOUNT_ERROR = f'Минимальное количество ингредиента - {s.MIN_INGREDIENT_AMOUNT}'
+MAX_AMOUNT_ERROR = f'Максимальное количество ингредиента - {s.MAX_INGREDIENT_AMOUNT}'
+
 
 class Tag(models.Model):
     """Модель тега."""
     name = models.CharField(
-        max_length=settings.MAX_LENGTH,
+        max_length=s.MAX_LENGTH,
         verbose_name='Название',
     )
     slug = models.SlugField(
-        max_length=settings.MAX_LENGTH,
+        max_length=s.MAX_LENGTH,
         verbose_name='Уникальный слаг',
     )
     color = models.CharField(
-        max_length=settings.COLOR_LENGTH,
+        max_length=s.COLOR_LENGTH,
         default="#ffffff",
         validators=(
             validators.RegexValidator(
-                regex=settings.COLOR_REGEX,
-                message=settings.NOT_A_HEX_COLOR
+                regex=s.COLOR_REGEX,
+                message=NOT_A_HEX_COLOR_ERROR
             ),
         ),
         verbose_name='Цвет в HEX',
@@ -46,11 +52,11 @@ class Tag(models.Model):
 class Ingredient(models.Model):
     """Модель ингидиента."""
     name = models.CharField(
-        max_length=settings.MAX_LENGTH,
+        max_length=s.MAX_LENGTH,
         verbose_name='Название ингредиента',
     )
     measurement_unit = models.CharField(
-        max_length=settings.MAX_LENGTH,
+        max_length=s.MAX_LENGTH,
         verbose_name='Единицы измерения',
         null=True
     )
@@ -86,7 +92,7 @@ class Recipe(models.Model):
         through='RecipeIngredientRelation',
     )
     name = models.CharField(
-        max_length=settings.MAX_LENGTH,
+        max_length=s.MAX_LENGTH,
         verbose_name='Название рецепта',
     )
     text = models.TextField(
@@ -99,11 +105,15 @@ class Recipe(models.Model):
     )
     cooking_time = models.PositiveSmallIntegerField(
         verbose_name='Время приготовления',
-        default=settings.MIN_COOKING_TIME_VALUE,
+        default=s.MIN_COOKING_TIME,
         validators=(
             validators.MinValueValidator(
-                settings.MIN_COOKING_TIME_VALUE,
-                message=settings.MIN_COOKING_TIME
+                s.MIN_COOKING_TIME,
+                message=MIN_COOKING_TIME_ERROR
+            ),
+            validators.MaxValueValidator(
+                s.MAX_COOKING_TIME,
+                message=MAX_COOKING_TIME_ERROR
             ),
         ),
     )
@@ -173,16 +183,16 @@ class RecipeIngredientRelation(models.Model):
         on_delete=models.CASCADE
     )
     amount = models.PositiveSmallIntegerField(
-        default=settings.MIN_AMOUNT_VALUE,
+        default=s.MIN_INGREDIENT_AMOUNT,
         verbose_name='Количество ингредиента',
         validators=(
             validators.MinValueValidator(
-                settings.MIN_AMOUNT_VALUE,
-                message=settings.MIN_INGREDIENT_AMOUNT,
+                s.MIN_INGREDIENT_AMOUNT,
+                message=MIN_AMOUNT_ERROR,
             ),
             validators.MaxValueValidator(
-                settings.MAX_AMOUNT_VALUE,
-                message=settings.MAX_INGREDIENT_AMOUNT,
+                s.MAX_INGREDIENT_AMOUNT,
+                message=MAX_AMOUNT_ERROR,
             ),
         ),
     )

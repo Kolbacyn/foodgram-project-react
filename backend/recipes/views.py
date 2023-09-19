@@ -1,4 +1,4 @@
-from django.conf import settings
+from django.conf import settings as s
 from django.db.models import Sum
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import FileResponse
@@ -15,7 +15,7 @@ from api.serializers import (TagSerializer, IngredientSerializer,
                              ShoppingCartAddSerializer, RecipeEditSerializer)
 from recipes.models import (Tag, Ingredient, Recipe, Favorite,
                             ShoppingCart, RecipeIngredientRelation)
-from recipes.utils import add_or_delete
+from recipes.utils import add_ingredient, delete_ingredient
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -75,8 +75,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def favorite(self, request, pk):
         """Добавляем или удаляем рецепт в избранное."""
-        return add_or_delete(
-            FavoriteSerializer, Favorite, request, pk
+        if request.method == 'POST':
+            return add_ingredient(
+                FavoriteSerializer, Favorite, request, pk
+        )
+        if request.method == 'DELETE':
+            return delete_ingredient(
+                Favorite, request, pk
         )
 
     @action(
@@ -86,8 +91,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def shopping_cart(self, request, pk):
         """Добавляем или удаляем рецепт в корзину покупок."""
-        return add_or_delete(
-            ShoppingCartAddSerializer, ShoppingCart, request, pk
+        if request.method == 'POST':
+            return add_ingredient(
+                ShoppingCartAddSerializer, ShoppingCart, request, pk
+        )
+        if request.method == 'DELETE':
+            return delete_ingredient(
+                ShoppingCart, request, pk
         )
 
     @action(
@@ -108,7 +118,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
             unit = ingredient['ingredient__measurement_unit']
             amount = ingredient['ingredient_amount']
             groceries.append(f'\n{name} - {amount}, {unit}')
-        response = FileResponse(groceries, content_type=settings.CONTENT_TYPE)
-        response['Content-Disposition'] = \
-            'attachment; filename=settings.FILENAME'
+        response = FileResponse(groceries, content_type=s.CONTENT_TYPE)
+        response['Content-Disposition'] = (
+            f'attachment; filename="{s.FILENAME}"'
+        )
         return response

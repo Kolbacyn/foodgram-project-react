@@ -1,5 +1,5 @@
 from django.contrib.auth.models import AbstractUser
-from django.conf import settings
+from django.conf import settings as s
 from django.db import models
 
 
@@ -10,33 +10,33 @@ class User(AbstractUser):
 
     email = models.CharField(
         verbose_name='Адрес электронной почты',
-        max_length=settings.MAX_EMAIL_LENGTH,
+        max_length=s.MAX_EMAIL_LENGTH,
         blank=False,
         null=False,
         unique=True,
     )
     username = models.CharField(
         verbose_name='Уникальное имя пользователя',
-        max_length=settings.MAX_LENGHT_FOR_USER,
+        max_length=s.MAX_LENGHT_FOR_USER,
         blank=False,
         null=False,
         unique=True,
     )
     first_name = models.CharField(
         verbose_name='Имя',
-        max_length=settings.MAX_LENGHT_FOR_USER,
+        max_length=s.MAX_LENGHT_FOR_USER,
         blank=False,
         null=False,
     )
     last_name = models.CharField(
         verbose_name='Фамилия',
-        max_length=settings.MAX_LENGHT_FOR_USER,
+        max_length=s.MAX_LENGHT_FOR_USER,
         blank=False,
         null=False,
     )
     password = models.CharField(
         'Пароль',
-        max_length=settings.MAX_LENGHT_FOR_USER,
+        max_length=s.MAX_LENGHT_FOR_USER,
         blank=False,
         null=False
     )
