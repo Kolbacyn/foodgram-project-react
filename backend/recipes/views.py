@@ -1,4 +1,3 @@
-from django.conf import settings as s
 from django.db.models import Sum
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import FileResponse
@@ -16,6 +15,9 @@ from api.serializers import (TagSerializer, IngredientSerializer,
 from recipes.models import (Tag, Ingredient, Recipe, Favorite,
                             ShoppingCart, RecipeIngredientRelation)
 from recipes.utils import add_ingredient, delete_ingredient
+
+
+CONTENT_TYPE = 'text/plain'
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -57,7 +59,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 class RecipeViewSet(viewsets.ModelViewSet):
     """Рецепты."""
     queryset = Recipe.objects.all()
-    serializer_class = RecipeSerializer
+    serializer_class = RecipeSerializer, RecipeEditSerializer
     permission_classes = (AuthorOrReadOnly,)
     pagination_class = LimitPageNumberPagination
     filter_backends = (DjangoFilterBackend,)
@@ -118,7 +120,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             unit = ingredient['ingredient__measurement_unit']
             amount = ingredient['ingredient_amount']
             groceries.append(f'\n{name} - {amount}, {unit}')
-        response = FileResponse(groceries, content_type=s.CONTENT_TYPE)
+        response = FileResponse(groceries, content_type=CONTENT_TYPE)
         response['Content-Disposition'] = (
             f'attachment; filename="{s.FILENAME}"'
         )

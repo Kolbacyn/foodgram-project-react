@@ -5,12 +5,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 SECRET_KEY = os.getenv('SECRET_KEY', default='your_secret_key')
-PORT = os.getenv('PORT')
-DOMAIN = os.getenv('DOMAIN')
 
 DEBUG = os.getenv('DEBUG', default='False') == 'True'
 
-ALLOWED_HOSTS = [PORT, DOMAIN, 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['51.250.106.8', 'foodiegram.hopto.org', 'localhost', '127.0.0.1']
 
 
 INSTALLED_APPS = [
@@ -144,7 +142,6 @@ DJOSER = {
 
 # Константы:
 COLOR_LENGTH = 7
-CONTENT_TYPE = 'text/plain'
 MIN_COOKING_TIME = 1
 MAX_COOKING_TIME = 1000
 MIN_INGREDIENT_AMOUNT = 1

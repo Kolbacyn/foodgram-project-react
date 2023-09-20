@@ -3,12 +3,13 @@ import base64
 from django.core.files.base import ContentFile
 from django.conf import settings as s
 from django.db.transaction import atomic
+from django.db.models import F, QuerySet
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers, exceptions, status, relations
 from rest_framework.validators import UniqueTogetherValidator
 
 from users.models import User, Follow
-# from recipes.utils import tags_and_ingredients_set
+from recipes.utils import tags_and_ingredients_set
 from recipes.models import (Tag, Ingredient, Recipe, Favorite,
                             RecipeIngredientRelation, ShoppingCart)
 
@@ -182,86 +183,65 @@ class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
 
 class RecipeEditSerializer(serializers.ModelSerializer):
     """Сериализатор создания/редактирования рецептов."""
-    id = serializers.PrimaryKeyRelatedField
-    cooking_time = serializers.IntegerField()
-    ingredients = RecipeIngredientCreateSerializer(
-        many=True,
-    )
-    tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(),
-                                              many=True)
-    image = Base64ImageField(required=True)
+    tags = TagSerializer(many=True, read_only=True)
+    author = UserSerializer(read_only=True)
+    ingredients = SerializerMethodField()
+    is_favorited = SerializerMethodField()
+    is_in_shopping_cart = SerializerMethodField()
+    image = Base64ImageField()
 
-    class Meta(RecipeSerializer.Meta):
+    class Meta:
         model = Recipe
         fields = (
-            'ingredients',
-            'tags',
-            'name',
-            'image',
-            'text',
-            'cooking_time',
+            "id",
+            "tags",
+            "author",
+            "ingredients",
+            "is_favorited",
+            "is_in_shopping_cart",
+            "name",
+            "image",
+            "text",
+            "cooking_time",
         )
-        required_fileds = '__all__'
+        read_only_fields = (
+            "is_favorite",
+            "is_in_shopping_cart",
+        )
+
+    
+
+    def get_ingredients(self, recipe: Recipe) -> QuerySet[dict]:
+        """Получает список ингридиентов для рецепта.
+
+        Args:
+            recipe (Recipe): Запрошенный рецепт.
+
+        Returns:
+            QuerySet[dict]: Список ингридиентов в рецепте.
+        """
+        ingredients = recipe.ingredients.values(
+            "id", "name", "measurement_unit", amount=F("recipe__amount")
+        )
+        return ingredients
+
 
     @atomic
-    def tags_and_ingredients_set(self, recipe, tags, ingredients):
+    def create(self, validated_data: dict) -> Recipe:
+        """Создаёт рецепт.
+
+        Args:
+            validated_data (dict): Данные для создания рецепта.
+
+        Returns:
+            Recipe: Созданый рецепт.
+        """
+        tags: list[int] = validated_data.pop("tags")
+        ingredients: dict[int, tuple] = validated_data.pop("ingredients")
+        recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags)
-        RecipeIngredientRelation.objects.bulk_create(
-            [RecipeIngredientRelation(
-                recipe=recipe,
-                ingredient=ingredient['id'],
-                amount=ingredient['amount']
-            ) for ingredient in ingredients]
-        )
-
-    @atomic
-    def create(self, validated_data):
-        """Создаем рецепт"""
-        tags = validated_data.pop('tags')
-        ingredients = validated_data.pop('ingredients')
-        recipe = Recipe.objects.create(author=self.context['request'].user,
-                                       **validated_data)
-        self.tags_and_ingredients_set(recipe, tags, ingredients)
+        recipe_ingredients_set(recipe, ingredients)
         return recipe
-
-    @atomic
-    def update(self, instance, validated_data):
-        """Редактируем рецепт"""
-        # Обновляем картинку
-        if 'image' in validated_data:
-            instance.image.delete(save=False)
-            instance.image = self.fields['image'].to_internal_value(
-                validated_data['image']
-            )
-
-        # Обновляем теги
-        if 'tags' in validated_data:
-            tags_data = validated_data.pop('tags')
-            tags = Tag.objects.filter(id__in=tags_data)
-            instance.tags.set(tags)
-
-        # Обновляем ингредиенты
-        if 'ingredients' in validated_data:
-            ingredients_data = validated_data.pop('ingredients')
-            recipe_ingredients = []
-            for ingredient_data in ingredients_data:
-                ingredient_id = ingredient_data.pop('id')
-                amount = ingredient_data.pop('amount')
-                ingredient = Ingredient.objects.get(id=ingredient_id)
-                recipe_ingredients.append(
-                    RecipeIngredientRelation(
-                        recipe=instance, ingredient=ingredient, amount=amount
-                    )
-                )
-            RecipeIngredientRelation.objects.filter(recipe=instance).delete()
-            RecipeIngredientRelation.objects.bulk_create(recipe_ingredients)
-
-        # Обновляем рецепт
-        for key, value in validated_data.items():
-            setattr(instance, key, value)
-        instance.save()
-
-        return instance
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
