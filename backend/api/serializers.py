@@ -3,12 +3,10 @@ import base64
 from django.core.files.base import ContentFile
 from django.conf import settings as s
 from django.db.transaction import atomic
-from django.shortcuts import get_object_or_404
-from rest_framework import serializers, exceptions, status, relations
+from rest_framework import serializers, exceptions, status
 from rest_framework.validators import UniqueTogetherValidator
 
 from users.models import User, Follow
-# from recipes.utils import tags_and_ingredients_set
 from recipes.models import (Tag, Ingredient, Recipe, Favorite,
                             RecipeIngredientRelation, ShoppingCart)
 
