@@ -1,4 +1,5 @@
 from django.db.models import Sum
+from django.conf import settings as s
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
