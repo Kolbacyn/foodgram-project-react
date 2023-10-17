@@ -1,0 +1,22 @@
+GET http://127.0.0.1:8100/api/users/subscriptions/
+content-type: application/json
+Authorization: Token 1dd69966a01eaad7fe2ec8a2f1dc74b197cb12f1
+
+###
+
+GET http://127.0.0.1:8100/api/tags/
+content-type: application/json
+Authorization: Token 1dd69966a01eaad7fe2ec8a2f1dc74b197cb12f1
+
+###
+
+POST http://127.0.0.1:8100/api/recipes/
+content-type: application/json
+Authorization: Token 1dd69966a01eaad7fe2ec8a2f1dc74b197cb12f1
+
+{
+    "tags": [1, 2],
+    "name": "no name"
+}
+
+###

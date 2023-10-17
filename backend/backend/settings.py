@@ -3,11 +3,12 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-q3nsduojya_m!bomjuo6f7&3g#osk!2&k^kd)n78*%+uq=oh6d'
 
-DEBUG = True
+SECRET_KEY = os.getenv('SECRET_KEY', default='your_secret_key')
 
-ALLOWED_HOSTS = []
+DEBUG = os.getenv('DEBUG', default='False') == 'True'
+
+ALLOWED_HOSTS = ['51.250.106.8', 'foodiegram.hopto.org', 'localhost', '127.0.0.1']
 
 
 INSTALLED_APPS = [
@@ -64,8 +65,12 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_DB', 'django'),
+        'USER': os.getenv('POSTGRES_USER', 'django'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', ''),
+        'PORT': os.getenv('DB_PORT', 5432)
     }
 }
 
@@ -99,6 +104,7 @@ USE_L10N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'collected_static'
 STATICFILES_DIRS = ((BASE_DIR / 'static/'),)
 
 MEDIA_URL = '/media/'
@@ -114,18 +120,36 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 6,
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
     ),
 }
 
 DJOSER = {
     'LOGIN_FIELD': 'email',
-    'HIDE_USER': 'False',
+    'HIDE_USER': False,
     'SERIALIZERS': {
         'current_user': 'api.serializers.UserSerializer',
+        'user': 'api.serializers.UserSerializer',
+        'user_list': 'api.serializers.UserSerializer',
     },
     'PERMISSIONS': {
-        'user': ['djoser.permissions.CurrentUserOrAdminOrReadOnly'],
+        'user': ['api.permissions.AuthorOrReadOnly'],
+        'user_list': ['api.permissions.AuthorOrReadOnly'],
     },
 }
+
+# Переменные, используемые в проекте.
+# ------------------------------------------------------
+
+# Константы:
+COLOR_LENGTH = 7
+MIN_COOKING_TIME = 1
+MAX_COOKING_TIME = 1000
+MIN_INGREDIENT_AMOUNT = 1
+MAX_INGREDIENT_AMOUNT = 1000
+FILENAME = 'shopping_cart.txt'
+MAX_LENGTH = 200
+MAX_EMAIL_LENGTH = 254
+MAX_LENGHT_FOR_USER = 150
+
+# Регулярные выражени:
+COLOR_REGEX = r'^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
