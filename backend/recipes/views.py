@@ -3,13 +3,14 @@ from django.conf import settings as s
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets
+from rest_framework import filters, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import (AllowAny, IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 
 from api.filters import IngredientFilter, RecipeFilter
 from api.pagination import LimitPageNumberPagination
-from api.permissions import AuthorOrReadOnly
+from api.permissions import IsAuthorOnlyPermission
 from api.serializers import (TagSerializer, IngredientSerializer,
                              RecipeSerializer, FavoriteSerializer,
                              ShoppingCartAddSerializer, RecipeEditSerializer)
@@ -42,10 +43,11 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     """Ингредиенты."""
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    permission_classes = (AllowAny, IsAuthenticated)
+    permission_classes = (AllowAny,)
     pagination_class = None
-    filter_backends = (DjangoFilterBackend,)
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     filterset_class = IngredientFilter
+    search_fields = ('name',)
 
     def perform_create(self, serializer):
         ingredient = get_object_or_404(
@@ -61,7 +63,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     """Рецепты."""
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer, RecipeEditSerializer
-    permission_classes = (AuthorOrReadOnly,)
+    permission_classes = (IsAuthorOnlyPermission,)
     pagination_class = LimitPageNumberPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
