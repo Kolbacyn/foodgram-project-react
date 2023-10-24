@@ -20,4 +20,7 @@ class UserAdmin(admin.ModelAdmin):
 @admin.register(Follow)
 class FollowAdmin(admin.ModelAdmin):
     list_display = ('subscriber', 'author',)
-    search_fields = ('subscriber', 'author',)
+    search_fields = ('subscriber__username',
+                     'subscriber__email',
+                     'author__username',
+                     'author__email')
