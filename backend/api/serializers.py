@@ -219,8 +219,8 @@ class RecipeEditSerializer(serializers.ModelSerializer):
         cooking_time = self.initial_data.get('cooking_time')
         if cooking_time < s.MIN_COOKING_TIME:
             raise exceptions.ValidationError(
-                    {'cooking_time': MIN_COOKING_TIME_ERROR}
-                )
+                {'cooking_time': MIN_COOKING_TIME_ERROR}
+            )
         return value
 
     @atomic
