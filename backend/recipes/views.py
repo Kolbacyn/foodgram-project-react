@@ -5,8 +5,7 @@ from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import filters, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import (AllowAny, IsAuthenticated,
-                                        IsAuthenticatedOrReadOnly)
+from rest_framework.permissions import (AllowAny, IsAuthenticated)
 
 from api.filters import IngredientFilter, RecipeFilter
 from api.pagination import LimitPageNumberPagination
