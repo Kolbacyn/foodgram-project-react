@@ -45,6 +45,7 @@ class ShortRecipeSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор пользователей."""
     is_subscribed = serializers.SerializerMethodField(read_only=True)
+    id = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = User
@@ -59,7 +60,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_is_subscribed(self, obj):
         """Проверяем подписан ли текущий пользователь на автора."""
-        user = self.context.get('request').user
+        user = self.context.get('request').user.id
         if Follow.objects.filter(subscriber=user, author=obj).exists():
             return True
         return False
@@ -171,7 +172,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
     """Ингредиент и количество для создания рецепта."""
-    id = serializers.IntegerField
+    id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
 
     class Meta:
         model = RecipeIngredientRelation
@@ -201,6 +202,27 @@ class RecipeEditSerializer(serializers.ModelSerializer):
         )
         required_fileds = '__all__'
 
+    def validate(self, value):
+        """Валидация ингредиентов и времени приготовления."""
+        ingredients = self.initial_data.get('ingredients')
+        ingredients_list = []
+        for item in ingredients:
+            if item['id'] in ingredients_list:
+                raise exceptions.ValidationError(
+                    {'ingredients': UNIQUE_INGREDIENT_ERROR}
+                )
+            ingredients_list.append(item['id'])
+            if int(item['amount']) <= 0:
+                raise exceptions.ValidationError(
+                    {'amount': MIN_AMOUNT_ERROR}
+                )
+        cooking_time = self.initial_data.get('cooking_time')
+        if cooking_time < s.MIN_COOKING_TIME:
+            raise exceptions.ValidationError(
+                    {'cooking_time': MIN_COOKING_TIME_ERROR}
+                )
+        return value
+
     @atomic
     def tags_and_ingredients_set(self, recipe, tags, ingredients):
         recipe.tags.set(tags)
@@ -226,40 +248,22 @@ class RecipeEditSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         """Редактируем рецепт"""
         # Обновляем картинку
-        if 'image' in validated_data:
-            instance.image.delete(save=False)
-            instance.image = self.fields['image'].to_internal_value(
-                validated_data['image']
-            )
+        # if 'image' in validated_data:
+        #    instance.image.delete(save=False)
+        #    instance.image = self.fields['image'].to_internal_value(
+        #        validated_data['image']
+        #    )
 
-        # Обновляем теги
-        if 'tags' in validated_data:
-            tags_data = validated_data.pop('tags')
-            tags = Tag.objects.filter(id__in=tags_data)
-            instance.tags.set(tags)
-
-        # Обновляем ингредиенты
-        if 'ingredients' in validated_data:
-            ingredients_data = validated_data.pop('ingredients')
-            recipe_ingredients = []
-            for ingredient_data in ingredients_data:
-                ingredient_id = ingredient_data.pop('id')
-                amount = ingredient_data.pop('amount')
-                ingredient = Ingredient.objects.get(id=ingredient_id)
-                recipe_ingredients.append(
-                    RecipeIngredientRelation(
-                        recipe=instance, ingredient=ingredient, amount=amount
-                    )
-                )
-            RecipeIngredientRelation.objects.filter(recipe=instance).delete()
-            RecipeIngredientRelation.objects.bulk_create(recipe_ingredients)
-
-        # Обновляем рецепт
-        for key, value in validated_data.items():
-            setattr(instance, key, value)
-        instance.save()
-
-        return instance
+        # Обновляем теги и ингредиенты
+        tags = validated_data.pop('tags')
+        ingredients = validated_data.pop('ingredients')
+        instance.tags.clear()
+        instance.tags.set(tags)
+        instance.ingredients.clear()
+        self.tags_and_ingredients_set(recipe=instance,
+                                      tags=tags,
+                                      ingredients=ingredients)
+        return super().update(instance, validated_data)
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
@@ -307,7 +311,7 @@ class FollowSerializer(serializers.ModelSerializer):
     def validate_subscription(self, data):
         """Валидация подписок."""
         author = self.instance
-        user = self.context.get('request').user
+        user = self.context.get('request').user.id
         if Follow.objects.filter(subscriber=user, author=author).exists():
             raise exceptions.ValidationError(
                 detail=EXISTING_FOLLOW_ERROR,
