@@ -82,4 +82,4 @@ sudo docker compose -f docker-compose.yml down
 
 ## Разработчик
 
-Зольников Юрий
+[Зольников Юрий](https://github.com/Kolbacyn/)
